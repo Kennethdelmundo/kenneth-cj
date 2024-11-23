@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step-Powered Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="initialization.js"></script>
+    
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+        }
+
+        .dark-mode body {
+        background-color: #121212; /* Dark background */
+        color: #f4f6f9; /* Light text */
+}
+        /* Navbar Styling */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(90deg, #007bff, #00c6ff); /* Gradient Background */
+            padding: 1rem 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            transition: color 0.3s;
+        }
+
+        .navbar-brand:hover {
+            color: #f4f6f9;
+        }
+
+        .navbar-toggler-icon {
+            background-color: #fff;
+        }
+
+        .navbar-nav .nav-link {
+            color: white !important;
+            font-weight: 500;
+            padding: 12px 20px;
+            transition: all 0.3s;
+        }
+
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #f4f6f9;
+            border-radius: 8px;
+        }
+
+        .navbar-nav .nav-link.active {
+            color: #ffd700; /* Gold color for active link */
+            font-weight: bold;
+            border-bottom: 3px solid #ffd700; /* Active link underline */
+        }
+
+        .navbar-nav .nav-item {
+            margin-left: 20px;
+        }
+
+        /* Hover effect for the nav links */
+        .nav-item:hover .nav-link {
+            color: #ffcc00;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .col-left {
+            flex: 0.5; /* Reduced width */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .col-right {
+            flex: 2.5; /* Increased width */
+        }
+
+        .col-left .box {
+            height: 235px; 
+        }
+
+        .col-right .box {
+            height: 490px; 
+        }
+
+        .box {
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background-color: white;
+            text-align: center;
+        }
+
+        .battery-status, .step-counter {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .battery-status h2, .step-counter h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .battery-percentage {
+            font-size: 40px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .battery-container {
+            position: relative;
+            width: 150px;
+            height: 75px;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .battery-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            border-radius: 15px;
+            background-color: green;
+            width: 0%;
+        }
+
+        .battery-container i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            color: #fff;
+        }
+
+        .step-counter .fa-walking {
+            font-size: 48px;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+
+        .step-counter span {
+            font-size: 50px;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 400px; /* Increased height for better visibility */
+            max-width: 800px;
+            margin-top: 30px;
+        }
+
+        .chart-container h3 {
+            font-size: 20px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Sticky Navbar Style */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .dark-mode .navbar {
+        background: linear-gradient(90deg, #333, #555);
+    }
+    
+
+    .navbar-brand,
+    .navbar-nav .nav-link {
+        color: white !important;
+        transition: color 0.3s;
+    }
+
+    .dark-mode .navbar-brand,
+    .dark-mode .navbar-nav .nav-link {
+        color: #ffffff !important;
+    }
+
+    .navbar-toggler-icon {
+        background-color: #fff;
+    }
+
+    .dark-mode .navbar-toggler-icon {
+        background-color: #ddd;
+    }
+    
+
+    /* Box Styling */
+    .box {
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background-color: white;
+        text-align: center;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .dark-mode .box {
+        background-color: #1e1e1e;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Battery Fill */
+    .battery-fill {
+        transition: background-color 0.3s, width 0.3s;
+    }
+
+    /* Chart Styling */
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        max-width: 800px;
+        margin-top: 30px;
+    }
+
+    .chart-container h3 {
+        margin-bottom: 20px;
+    }
+
+    .dark-mode .chart-container h3 {
+        color: #ffffff;
+    }
+
+    /* Button Styling */
+    #darkModeToggle {
+        border: none;
+        background: transparent;
+        color: white;
+        transition: color 0.3s;
+    }
+
+    .dark-mode #darkModeToggle {
+        color: #ffffff;
+    }
+    .dark-mode .battery-status h2, .dark-mode .step-counter h2 {
+        color: #fff; /* White text in dark mode */
+    }
+
+    .dark-mode .fas {
+    color: white !important; /* Set the icon color to yellow in dark mode */
+}
+
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" id="navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Step-Powered</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="maintenance.html">Maintenance</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Logout</a>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-outline-secondary" id="darkModeToggle">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>    
+
+<div class="container" style="padding-top: 50px;">
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-left">
+            <!-- Battery Status -->
+            <div class="box">
+                <div class="battery-status">
+                    <h2>Battery Status</h2>
+                    <div class="battery-container">
+                        <div class="battery-fill" id="batteryFill"></div>
+                        <i class="fas fa-bolt" id="lightningIcon"></i>
+                    </div>
+                    <div class="battery-percentage" id="batteryPercentage">
+                        85%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step Counter -->
+            <div class="box">
+                <div class="step-counter">
+                    <i class="fas fa-walking"></i>
+                    <h2>Step Counter</h2>
+                    <span id="stepCounter">100</span>
+                    <p>Steps</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-right">
+            <div class="box">
+                <div class="chart-container">
+                    <h3>Battery Percentage in Last 5 Days</h3>
+                    <canvas id="batteryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   <!-- Second Row for Piezo Charts -->
+<div class="row" style="padding-top: 40px; display: flex; justify-content: space-between;">
+    <div class="col-piezo" style="flex: 1; margin-right: 20px;">
+        <div class="box">
+            <div class="chart-container">
+                <h3>Piezo Data Chart 1</h3>
+                <canvas id="piezoChart1"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-piezo" style="flex: 1;">
+        <div class="box">
+            <div class="chart-container">
+                <h3>Piezo Data Chart 2</h3>
+                <canvas id="piezoChart2"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+    // Battery percentage data for the last 5 days (static example)
+    const batteryData = [70, 80, 85, 90, 88];
+
+    // Battery percentage for the current day (to change the icon and color)
+  // Assuming Firebase is already initialized
+    const database = firebase.database();
+
+// Set the battery percentage in the database
+    const batteryRef = database.ref('Percentage');
+    batteryRef.set(currentBatteryPercentage);
+
+    // Update the battery fill level based on percentage
+    function updateBatteryFill(percentage) {
+        const batteryFill = document.getElementById('batteryFill');
+        const batteryPercentageText = document.getElementById('batteryPercentage');
+        const lightningIcon = document.getElementById('lightningIcon');
+
+        batteryPercentageText.textContent = percentage + '%';
+
+        // Dynamically update the width of the fill based on percentage
+        batteryFill.style.width = percentage + '%';
+
+        // Set battery fill color based on percentage
+        if (percentage >= 50) {
+            batteryFill.style.backgroundColor = 'green';
+        } else if (percentage >= 21) {
+            batteryFill.style.backgroundColor = 'yellow';
+        } else {
+            batteryFill.style.backgroundColor = 'red';
+        }
+    }
+
+    // Initialize the battery fill based on the percentage
+    updateBatteryFill(currentBatteryPercentage);
+
+    // Creating the Chart.js chart
+    const ctx = document.getElementById('batteryChart').getContext('2d');
+    const batteryChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'], 
+            datasets: [{
+                label: 'Battery Percentage',
+                data: batteryData,
+                fill: false,
+                borderColor: '#007bff',
+                tension: 0.1,
+                borderWidth: 3,
+                pointRadius: 5,
+                pointBackgroundColor: '#007bff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Days'
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Battery Percentage (%)'
+                    },
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        stepSize: 10
+                    },
+                    grid: {
+                        display: true,
+                        borderColor: '#ddd'
+                    }
+                }
+            }
+        }
+    });
+
+ document.getElementById('darkModeToggle').addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+
+        // Change the Chart.js colors dynamically
+        const chart = Chart.getChart('batteryChart'); // Access the chart instance
+        if (chart) {
+            chart.options.scales.x.grid.color = document.body.classList.contains('dark-mode') ? '#444' : '#ddd';
+            chart.options.scales.y.grid.color = document.body.classList.contains('dark-mode') ? '#444' : '#ddd';
+            chart.data.datasets[0].borderColor = document.body.classList.contains('dark-mode') ? '#ffcc00' : '#007bff';
+            chart.data.datasets[0].pointBackgroundColor = document.body.classList.contains('dark-mode') ? '#ffcc00' : '#007bff';
+            chart.update();
+        }
+    });
+</script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
