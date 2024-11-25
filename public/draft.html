@@ -318,8 +318,8 @@
                         <div class="battery-fill" id="batteryFill"></div>
                         <i class="fas fa-bolt" id="lightningIcon"></i>
                     </div>
-                    <div class="battery-percentage" id="batteryPercentage">
-                        85%
+                    <div class="battery-percentage" id="percentage">
+
                     </div>
                 </div>
             </div>
@@ -329,7 +329,7 @@
                 <div class="step-counter">
                     <i class="fas fa-walking"></i>
                     <h2>Step Counter</h2>
-                    <span id="stepCounter">100</span>
+                    <span id="count">100</span>
                     <p>Steps</p>
                 </div>
             </div>
@@ -479,7 +479,7 @@ document.getElementById('darkModeToggle').addEventListener('click', () => {
 });
 
 </script>
-
+<script src="firebase.js" type="module"></script> <!-- Link to the external JS file -->
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
