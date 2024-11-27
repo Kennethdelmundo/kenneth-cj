@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Table</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .filter-container {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    input[type="date"], button {
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <a href="./kennethtest.html" title="View as Chart">Data Table</a>
+  </h1>
+
+  <div class="filter-container">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate">
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate">
+    <button id="filterButton">Filter</button>
+  </div>
+
+  <h2>Battery Data</h2>
+  <table id="batteryTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Battery Percentage (%)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+  <h2>1st Stepper Data</h2>
+  <table id="stepperTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>1st Stepper Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+  <h2>2nd Stepper Data</h2>
+  <table id="secondStepperTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>2nd Stepper Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+  <h2>Count Data</h2>
+  <table id="countTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Count Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+  <h2>Watts Data</h2>
+  <table id="wattsTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Watts Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data will be dynamically inserted here -->
+    </tbody>
+  </table>
+
+  <script>
+    let batteryData = [];
+    let stepperData = [];
+    let secondStepperData = [];
+    let countData = [];
+    let wattsData = [];
+
+    // Fetch the data from multiple JSON files
+    Promise.all([  
+      fetch('./backend/battery.json').then(res => res.json()).catch(err => console.error('Error fetching battery data', err)),
+      fetch('./backend/1st_Stepper.json').then(res => res.json()).catch(err => console.error('Error fetching 1st Stepper data', err)),
+      fetch('./backend/2nd_Stepper.json').then(res => res.json()).catch(err => console.error('Error fetching 2nd Stepper data', err)),
+      fetch('./backend/Count.json').then(res => res.json()).catch(err => console.error('Error fetching Count data', err)),
+      fetch('./backend/Watts.json').then(res => res.json()).catch(err => console.error('Error fetching Watts data', err))
+    ])
+    .then(([battery, stepper, secondStepper, count, watts]) => {
+      batteryData = battery;
+      stepperData = stepper;
+      secondStepperData = secondStepper;
+      countData = count;
+      wattsData = watts;
+
+      renderTable('batteryTable', batteryData, ['updated_at', 'value']);
+      renderTable('stepperTable', stepperData, ['updated_at', 'value']);
+      renderTable('secondStepperTable', secondStepperData, ['updated_at', 'value']);
+      renderTable('countTable', countData, ['updated_at', 'value']);
+      renderTable('wattsTable', wattsData, ['updated_at', 'value']);
+    })
+    .catch(error => {
+      console.error("Error fetching or displaying data:", error);
+      document.body.innerHTML += "<p>Error loading table data. Check console for details.</p>";
+    });
+
+    // Function to render table rows
+    function renderTable(tableId, data, columns) {
+      const tableBody = document.getElementById(tableId).querySelector('tbody');
+      tableBody.innerHTML = ''; // Clear existing table rows
+      data.forEach(entry => {
+        const dateTime = parseDate(entry[columns[0]]);
+        
+        // Check if date is valid
+        if (isNaN(dateTime.getTime())) {
+          console.error('Invalid date:', entry[columns[0]]);
+          return;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${dateTime.toLocaleDateString("en-PH", { timeZone: 'Asia/Manila' })}</td>
+          <td>${dateTime.toLocaleTimeString("en-PH", { timeZone: 'Asia/Manila' })}</td>
+          <td>${entry[columns[1]]}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Helper function to parse the "YYYY-MM-DD HH:MM:SS" format into a Date object
+    function parseDate(dateString) {
+      // Split the string into date and time parts
+      const [datePart, timePart] = dateString.split(' ');
+      const [year, month, day] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+      
+      // Create a new date object
+      return new Date(year, month - 1, day, hour, minute, second);
+    }
+
+    // Filter data based on date range
+    document.getElementById('filterButton').addEventListener('click', () => {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      // Convert input dates to timestamps
+      const startTimestamp = startDate ? new Date(startDate).getTime() : null;
+      const endTimestamp = endDate ? new Date(endDate).getTime() + 24 * 60 * 60 * 1000 : null; // Add one day to the end date
+
+      // Filter the data for each dataset
+      renderTable('batteryTable', filterData(batteryData, startTimestamp, endTimestamp), ['updated_at', 'value']);
+      renderTable('stepperTable', filterData(stepperData, startTimestamp, endTimestamp), ['updated_at', 'value']);
+      renderTable('secondStepperTable', filterData(secondStepperData, startTimestamp, endTimestamp), ['updated_at', 'value']);
+      renderTable('countTable', filterData(countData, startTimestamp, endTimestamp), ['updated_at', 'value']);
+      renderTable('wattsTable', filterData(wattsData, startTimestamp, endTimestamp), ['updated_at', 'value']);
+    });
+
+    // Function to filter data by date range
+    function filterData(data, startTimestamp, endTimestamp) {
+      return data.filter(entry => {
+        const entryTimestamp = parseDate(entry.updated_at).getTime();
+        return (!startTimestamp || entryTimestamp >= startTimestamp) &&
+               (!endTimestamp || entryTimestamp < endTimestamp);
+      });
+    }
+  </script>
+</body>
+</html>

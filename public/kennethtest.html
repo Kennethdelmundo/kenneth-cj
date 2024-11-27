@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Charts</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    canvas {
+      max-width: 1000px;
+      max-height: 600px;
+      margin: 20px auto;
+      display: block;
+    }
+    h1 a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+    h1 a:hover {
+      text-decoration: underline;
+    }
+    .filter-container {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    input[type="date"], button {
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <a href="./table.html?chart=battery" title="View Battery Data as Table">Battery Percentage Chart</a>
+  </h1>
+  <canvas id="batteryChart" width="1000" height="600"></canvas>
+
+  <h1>
+    <a href="./table.html?chart=1st_stepper" title="View 1st Stepper Data as Table">1st Stepper Chart</a>
+  </h1>
+  <canvas id="stepperChart" width="1000" height="600"></canvas>
+
+  <h1>
+    <a href="./table.html?chart=2nd_stepper" title="View 2nd Stepper Data as Table">2nd Stepper Chart</a>
+  </h1>
+  <canvas id="secondStepperChart" width="1000" height="600"></canvas>
+
+  <h1>
+    <a href="./table.html?chart=count" title="View Count Data as Table">Count Chart</a>
+  </h1>
+  <canvas id="countChart" width="1000" height="600"></canvas>
+
+  <h1>
+    <a href="./table.html?chart=watts" title="View Watts Data as Table">Watts Chart</a>
+  </h1>
+  <canvas id="wattsChart" width="1000" height="600"></canvas>
+
+  <!-- Date filter inputs -->
+  <div class="filter-container">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate">
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate">
+    <button id="filterButton">Filter</button>
+    <button id="resetButton">Reset</button>
+  </div>
+
+  <script>
+    let originalChartData = {
+      battery: [],
+      stepper: [],
+      secondStepper: [],
+      count: [],
+      watts: []
+    };
+
+    let chartInstances = {
+      batteryChart: null,
+      stepperChart: null,
+      secondStepperChart: null,
+      countChart: null,
+      wattsChart: null
+    };
+
+    // Fetch data for charts
+    Promise.all([
+      fetch('./backend/battery.json').then(res => res.json()).catch(err => console.error('Error fetching battery data', err)),
+      fetch('./backend/1st_Stepper.json').then(res => res.json()).catch(err => console.error('Error fetching 1st Stepper data', err)),
+      fetch('./backend/2nd_Stepper.json').then(res => res.json()).catch(err => console.error('Error fetching 2nd Stepper data', err)),
+      fetch('./backend/Count.json').then(res => res.json()).catch(err => console.error('Error fetching Count data', err)),
+      fetch('./backend/Watts.json').then(res => res.json()).catch(err => console.error('Error fetching Watts data', err))
+    ])
+    .then(([battery, stepper, secondStepper, count, watts]) => {
+      // Store original data
+      originalChartData.battery = battery;
+      originalChartData.stepper = stepper;
+      originalChartData.secondStepper = secondStepper;
+      originalChartData.count = count;
+      originalChartData.watts = watts;
+
+      // Create all charts initially with the full data
+      createChart('batteryChart', originalChartData.battery, 'value');
+      createChart('stepperChart', originalChartData.stepper, 'value');
+      createChart('secondStepperChart', originalChartData.secondStepper, 'value');
+      createChart('countChart', originalChartData.count, 'value');
+      createChart('wattsChart', originalChartData.watts, 'value');
+    })
+    .catch(error => console.error("Error fetching data for charts", error));
+
+    // Function to generate a chart
+    function createChart(chartId, data, label) {
+      const ctx = document.getElementById(chartId).getContext('2d');
+      const timestamps = data.map(entry => {
+        // Replace space with T to make it a valid ISO format
+        const formattedDate = entry.updated_at.replace(" ", "T");
+        const date = new Date(formattedDate + "Z"); // Add "Z" for UTC timezone
+
+        if (isNaN(date)) {
+          console.error("Invalid date:", formattedDate); // Log any invalid dates
+        }
+
+        return date.toLocaleString("en-PH", { timeZone: 'Asia/Manila' });
+      });
+
+      const values = data.map(entry => entry[label]);
+
+      chartInstances[chartId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timestamps,
+          datasets: [{
+            label: label,
+            data: values,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderWidth: 3,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            },
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Timestamp',
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: label,
+              },
+              min: 0
+            }
+          }
+        }
+      });
+    }
+
+    // Function to filter chart data by date range
+    function filterDataByDate(startDate, endDate, data) {
+      const startTimestamp = startDate ? new Date(startDate).getTime() : null;
+      const endTimestamp = endDate ? new Date(endDate).getTime() + 24 * 60 * 60 * 1000 : null;
+
+      return data.filter(entry => {
+        const entryTimestamp = new Date(entry.updated_at).getTime();
+        return (!startTimestamp || entryTimestamp >= startTimestamp) &&
+               (!endTimestamp || entryTimestamp < endTimestamp);
+      });
+    }
+
+    // Handle filter button click
+    document.getElementById('filterButton').addEventListener('click', () => {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      // Filter and update charts with the filtered data
+      updateChart('batteryChart', 'value', originalChartData.battery, startDate, endDate);
+      updateChart('stepperChart', 'value', originalChartData.stepper, startDate, endDate);
+      updateChart('secondStepperChart', 'value', originalChartData.secondStepper, startDate, endDate);
+      updateChart('countChart', 'value', originalChartData.count, startDate, endDate);
+      updateChart('wattsChart', 'value', originalChartData.watts, startDate, endDate);
+    });
+
+    // Handle reset button click
+    document.getElementById('resetButton').addEventListener('click', () => {
+      // Reset charts to show all original data
+      resetChart('batteryChart', originalChartData.battery, 'value');
+      resetChart('stepperChart', originalChartData.stepper, 'value');
+      resetChart('secondStepperChart', originalChartData.secondStepper, 'value');
+      resetChart('countChart', originalChartData.count, 'value');
+      resetChart('wattsChart', originalChartData.watts, 'value');
+    });
+
+    // Function to update chart with filtered data
+    function updateChart(chartId, label, data, startDate, endDate) {
+      const filteredData = filterDataByDate(startDate, endDate, data);
+      const ctx = document.getElementById(chartId).getContext('2d');
+      const timestamps = filteredData.map(entry => {
+        // Replace space with T to make it a valid ISO format
+        const formattedDate = entry.updated_at.replace(" ", "T");
+        const date = new Date(formattedDate + "Z"); // Add "Z" for UTC timezone
+
+        return date.toLocaleString("en-PH", { timeZone: 'Asia/Manila' });
+      });
+
+      const values = filteredData.map(entry => entry[label]);
+
+      chartInstances[chartId].data.labels = timestamps;
+      chartInstances[chartId].data.datasets[0].data = values;
+      chartInstances[chartId].update();
+    }
+
+    // Function to reset chart to original data
+    function resetChart(chartId, data, label) {
+      createChart(chartId, data, label);
+    }
+  </script>
+</body>
+</html>
